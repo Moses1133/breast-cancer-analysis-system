@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Training | BreastCancerAI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-base:       #0d1117;
+            --bg-surface:    #111827;
+            --bg-elevated:   #1f2937;
+            --border:        #1f2937;
+            --border-light:  #374151;
+            --text-primary:  #e2e8f0;
+            --text-secondary:#9ca3af;
+            --text-muted:    #6b7280;
+            --accent:        #818cf8;
+            --accent-dark:   #6366f1;
+            --accent-dim:    #1e1b4b;
+            --danger:        #f87171;
+            --success:       #34d399;
+            --warning:       #fbbf24;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+            background:var(--bg-base);
+            color:var(--text-primary);
+            min-height:100vh;
+            display:flex; flex-direction:column;
+            font-size:13px; line-height:1.5;
+        }
+        .topbar {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:0 24px; height:52px;
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .brand-pill  { display:flex; align-items:center; gap:8px; }
+        .brand-icon  {
+            width:28px; height:28px;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            border-radius:6px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; color:#fff;
+        }
+        .brand-name  { font-size:14px; font-weight:600; color:var(--accent); }
+        .separator   { width:1px; height:20px; background:var(--border-light); }
+        .page-title  { font-size:13px; color:var(--text-secondary); }
+        .topbar-right { display:flex; align-items:center; gap:10px; }
+        .user-pill {
+            display:flex; align-items:center; gap:8px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:20px; padding:4px 12px 4px 4px;
+            cursor:pointer;
+        }
+        .avatar {
+            width:28px; height:28px;
+            background:linear-gradient(135deg,#7c3aed,#4f46e5);
+            border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:10px; font-weight:600; color:#ede9fe;
+        }
+        .user-name { font-size:11px; color:var(--text-primary); }
+        .nav-tabs-bar {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:0 24px;
+            display:flex; align-items:flex-end;
+        }
+        .nav-tab {
+            display:flex; align-items:center; gap:7px;
+            padding:12px 18px;
+            font-size:12px; font-weight:500;
+            color:var(--text-muted);
+            cursor:pointer;
+            border-bottom:2px solid transparent;
+            text-decoration:none; transition:all 0.15s;
+        }
+        .nav-tab:hover { color:var(--text-secondary); }
+        .nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+        /* MAIN GRID */
+        .main-content {
+            flex:1; display:grid;
+            grid-template-columns:400px 1fr;
+            gap:1px; background:var(--border);
+        }
+
+        /* LEFT: Config Panel */
+        .config-panel { background:var(--bg-surface); padding:24px; overflow-y:auto; }
+        .section-header {
+            display:flex; align-items:center; gap:8px;
+            margin-bottom:20px; padding-bottom:12px;
+            border-bottom:1px solid var(--border);
+        }
+        .section-header h2 { font-size:14px; font-weight:600; color:var(--text-primary); }
+
+        /* Model status */
+        .model-status {
+            display:flex; align-items:center; gap:10px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:10px; padding:14px 16px;
+            margin-bottom:20px;
+        }
+        .status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+        .status-dot.trained   { background:var(--success); box-shadow:0 0 6px rgba(52,211,153,0.5); }
+        .status-dot.untrained { background:var(--warning); box-shadow:0 0 6px rgba(251,191,36,0.5); }
+        .status-text { font-size:12px; font-weight:500; color:var(--text-primary); }
+        .status-sub  { font-size:10px; color:var(--text-muted); }
+
+        /* Upload zone */
+        .upload-zone {
+            background:var(--bg-elevated);
+            border:1.5px dashed var(--border-light);
+            border-radius:12px; padding:32px 20px;
+            text-align:center; cursor:pointer;
+            transition:all 0.2s; position:relative; margin-bottom:16px;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color:var(--accent);
+            background:rgba(99,102,241,0.05);
+        }
+        .upload-zone input[type="file"] {
+            position:absolute; inset:0;
+            opacity:0; cursor:pointer; width:100%; height:100%;
+        }
+        .upload-icon {
+            width:44px; height:44px;
+            background:var(--accent-dim);
+            border-radius:10px;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 12px;
+            font-size:18px; color:var(--accent);
+        }
+        .upload-zone h3 { font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px; }
+        .upload-zone p  { font-size:11px; color:var(--text-muted); }
+
+        .zip-selected {
+            display:none;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:8px; padding:10px 14px;
+            margin-bottom:16px;
+            display:none; align-items:center; justify-content:space-between;
+        }
+        .zip-name { font-size:12px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px; }
+        .btn-remove-zip { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:12px; transition:color 0.15s; }
+        .btn-remove-zip:hover { color:var(--danger); }
+
+        /* Form field */
+        .form-group { margin-bottom:16px; }
+        .form-label {
+            display:block; font-size:11px;
+            text-transform:uppercase; letter-spacing:0.07em;
+            color:var(--text-muted); font-weight:600; margin-bottom:6px;
+        }
+        .form-input {
+            width:100%; background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:8px; color:var(--text-primary);
+            font-size:13px; padding:9px 12px; outline:none;
+            transition:border-color 0.15s;
+        }
+        .form-input:focus { border-color:var(--accent); }
+        .form-hint { font-size:11px; color:var(--text-muted); margin-top:5px; }
+
+        .btn-train {
+            width:100%;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            border:none; border-radius:10px;
+            color:#fff; font-size:13px; font-weight:600;
+            padding:13px;
+            cursor:pointer; transition:all 0.2s;
+            display:flex; align-items:center; justify-content:center; gap:8px;
+            margin-top:4px;
+        }
+        .btn-train:hover:not(:disabled) {
+            background:linear-gradient(135deg,#6366f1,#9333ea);
+            transform:translateY(-1px);
+            box-shadow:0 6px 20px rgba(99,102,241,0.35);
+        }
+        .btn-train:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+
+        .alert-warn-dark {
+            background:rgba(245,158,11,0.1);
+            border:1px solid rgba(245,158,11,0.25);
+            border-radius:8px; padding:10px 14px;
+            font-size:11px; color:var(--warning); margin-top:16px;
+        }
+
+        /* RIGHT: Status Panel */
+        .status-panel {
+            background:var(--bg-surface); padding:24px;
+            overflow-y:auto; display:flex; flex-direction:column; gap:20px;
+        }
+
+        /* Progress card */
+        .progress-card {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:10px; padding:20px;
+        }
+        .progress-card-title {
+            font-size:11px; font-weight:600; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:0.07em; margin-bottom:16px;
+            display:flex; align-items:center; gap:6px;
+        }
+        .progress-card-title i { color:var(--accent); }
+        .progress-track {
+            height:8px; background:rgba(255,255,255,0.08);
+            border-radius:4px; overflow:hidden; margin-bottom:10px;
+        }
+        .progress-fill {
+            height:100%;
+            background:linear-gradient(90deg,#4f46e5,#7c3aed,#c084fc);
+            border-radius:4px; transition:width 0.4s ease; width:0%;
+        }
+        .progress-meta {
+            display:flex; justify-content:space-between;
+            font-size:11px; color:var(--text-muted);
+        }
+        .progress-pct { font-size:28px; font-weight:700; color:var(--accent); margin-bottom:4px; }
+        .progress-msg { font-size:12px; color:var(--text-secondary); min-height:18px; }
+
+        /* Log */
+        .log-card {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:10px; padding:16px; flex:1;
+        }
+        .log-card-title {
+            font-size:11px; font-weight:600; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:0.07em; margin-bottom:12px;
+            display:flex; align-items:center; gap:6px;
+        }
+        .log-card-title i { color:var(--accent); }
+        .log-body {
+            background:var(--bg-base);
+            border:1px solid var(--border);
+            border-radius:6px; padding:12px;
+            height:240px; overflow-y:auto;
+            font-size:11px; font-family:monospace;
+            color:var(--text-muted); line-height:1.7;
+        }
+        .log-line.info    { color:var(--text-secondary); }
+        .log-line.success { color:var(--success); }
+        .log-line.error   { color:var(--danger); }
+        .log-line.accent  { color:var(--accent); }
+
+        /* Info cards */
+        .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .info-card {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:10px; padding:14px 16px;
+        }
+        .info-card .ic-label {
+            font-size:10px; text-transform:uppercase;
+            letter-spacing:0.07em; color:var(--text-muted); margin-bottom:6px;
+        }
+        .info-card .ic-val { font-size:14px; font-weight:600; color:var(--text-primary); }
+        .info-card .ic-sub { font-size:10px; color:var(--text-muted); margin-top:2px; }
+
+        /* Requirements */
+        .req-list { list-style:none; display:flex; flex-direction:column; gap:8px; }
+        .req-item {
+            display:flex; align-items:center; gap:10px;
+            font-size:12px; color:var(--text-secondary);
+        }
+        .req-item i { font-size:12px; width:16px; text-align:center; }
+        .req-item i.fa-check-circle { color:var(--success); }
+        .req-item i.fa-circle-info  { color:var(--accent); }
+
+        /* DROPDOWN */
+        .dropdown-dark .dropdown-menu {
+            background:var(--bg-surface);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            box-shadow:0 8px 30px rgba(0,0,0,0.4);
+        }
+        .dropdown-dark .dropdown-item { color:var(--text-secondary); font-size:12px; padding:8px 14px; }
+        .dropdown-dark .dropdown-item:hover { background:var(--bg-elevated); color:var(--text-primary); }
+
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-track { background:var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background:var(--bg-elevated); border-radius:4px; }
+
+        @media (max-width:768px) {
+            .main-content { grid-template-columns:1fr; }
+            .info-grid { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <div class="topbar-left">
+        <div class="brand-pill">
+            <div class="brand-icon"><i class="fas fa-dna"></i></div>
+            <span class="brand-name">BreastCancerAI</span>
+        </div>
+        <div class="separator"></div>
+        <span class="page-title">Model Training</span>
+    </div>
+    <div class="topbar-right">
+        <div class="dropdown dropdown-dark">
+            <div class="user-pill dropdown-toggle" role="button" data-bs-toggle="dropdown">
+                <div class="avatar" id="avatarInitials">U</div>
+                <span class="user-name" id="usernameDisplay">{{ username }}</span>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-arrow-right-from-bracket me-2"></i>Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<!-- NAV TABS -->
+<div class="nav-tabs-bar">
+    <a href="/" class="nav-tab"><i class="fas fa-upload" style="font-size:11px"></i> Predict</a>
+    <a href="/training" class="nav-tab active"><i class="fas fa-brain" style="font-size:11px"></i> Training</a>
+    <a href="/history" class="nav-tab"><i class="fas fa-clock-rotate-left" style="font-size:11px"></i> History</a>
+    <a href="/about" class="nav-tab"><i class="fas fa-circle-info" style="font-size:11px"></i> About</a>
+</div>
+
+<div class="main-content">
+
+    <!-- LEFT: Config -->
+    <div class="config-panel">
+        <div class="section-header">
+            <i class="fas fa-brain" style="color:var(--accent)"></i>
+            <h2>Training Configuration</h2>
+        </div>
+
+        <!-- Model status -->
+        <div class="model-status" id="modelStatusCard">
+            <div class="status-dot untrained" id="statusDot"></div>
+            <div>
+                <div class="status-text" id="statusText">Checking model…</div>
+                <div class="status-sub" id="statusSub">Loading status</div>
+            </div>
+        </div>
+
+        <!-- ZIP upload -->
+        <div class="form-group">
+            <label class="form-label">Dataset (ZIP)</label>
+            <div class="upload-zone" id="zipZone">
+                <input type="file" id="zipInput" accept=".zip" onchange="handleZip(this)">
+                <div class="upload-icon"><i class="fas fa-file-zipper"></i></div>
+                <h3>Upload training dataset</h3>
+                <p>ZIP file containing benign/ and malignant/ folders</p>
+            </div>
+            <div class="zip-selected" id="zipSelected">
+                <span class="zip-name" id="zipName">—</span>
+                <button class="btn-remove-zip" onclick="removeZip()"><i class="fas fa-xmark"></i></button>
+            </div>
+        </div>
+
+        <!-- Epochs -->
+        <div class="form-group">
+            <label class="form-label" for="epochInput">Epochs</label>
+            <input type="number" id="epochInput" class="form-input" value="10" min="1" max="100">
+            <div class="form-hint">More epochs improve accuracy but take longer. 10–20 recommended.</div>
+        </div>
+
+        <button class="btn-train" id="trainBtn" onclick="startTraining()">
+            <i class="fas fa-play"></i> Start Training
+        </button>
+
+        <div class="alert-warn-dark">
+            <i class="fas fa-triangle-exclamation me-1"></i>
+            <strong>Requirements:</strong> Dataset ZIP must contain <code style="font-size:10px;background:rgba(0,0,0,0.3);padding:1px 4px;border-radius:3px">benign/</code> and <code style="font-size:10px;background:rgba(0,0,0,0.3);padding:1px 4px;border-radius:3px">malignant/</code> subdirectories with image files.
+        </div>
+    </div>
+
+    <!-- RIGHT: Status -->
+    <div class="status-panel">
+
+        <!-- Progress -->
+        <div class="progress-card">
+            <div class="progress-card-title"><i class="fas fa-chart-line"></i> Training Progress</div>
+            <div class="progress-pct" id="progressPct">0%</div>
+            <div class="progress-msg" id="progressMsg">Waiting to start…</div>
+            <div class="progress-track" style="margin-top:12px">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-meta">
+                <span id="progressStatus">Idle</span>
+                <span id="progressEta">—</span>
+            </div>
+        </div>
+
+        <!-- Info grid -->
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="ic-label">Architecture</div>
+                <div class="ic-val">EfficientNetB4</div>
+                <div class="ic-sub">Transfer learning base</div>
+            </div>
+            <div class="info-card">
+                <div class="ic-label">Input Size</div>
+                <div class="ic-val">224 × 224</div>
+                <div class="ic-sub">RGB patches</div>
+            </div>
+            <div class="info-card">
+                <div class="ic-label">Optimizer</div>
+                <div class="ic-val">Adam</div>
+                <div class="ic-sub">lr = 1e-4</div>
+            </div>
+            <div class="info-card">
+                <div class="ic-label">Loss</div>
+                <div class="ic-val">Binary CE</div>
+                <div class="ic-sub">Sigmoid output</div>
+            </div>
+        </div>
+
+        <!-- Log -->
+        <div class="log-card">
+            <div class="log-card-title"><i class="fas fa-terminal"></i> Training Log</div>
+            <div class="log-body" id="logBody">
+                <div class="log-line info">Waiting for training to start…</div>
+            </div>
+        </div>
+
+        <!-- Requirements -->
+        <div style="background:var(--bg-elevated);border:1px solid var(--border-light);border-radius:10px;padding:16px">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px;display:flex;align-items:center;gap:6px">
+                <i class="fas fa-circle-check" style="color:var(--accent)"></i> Dataset Requirements
+            </div>
+            <ul class="req-list">
+                <li class="req-item"><i class="fas fa-check-circle"></i> ZIP file containing image folders</li>
+                <li class="req-item"><i class="fas fa-check-circle"></i> <code style="font-size:10px">benign/</code> folder with benign samples</li>
+                <li class="req-item"><i class="fas fa-check-circle"></i> <code style="font-size:10px">malignant/</code> folder with malignant samples</li>
+                <li class="req-item"><i class="fas fa-circle-info"></i> Minimum ~50 images per class recommended</li>
+                <li class="req-item"><i class="fas fa-circle-info"></i> Supported: PNG, JPG, TIFF</li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let pollInterval = null;
+    let selectedZip  = null;
+
+    (function(){
+        const name = document.getElementById('usernameDisplay').textContent.trim();
+        if (name) document.getElementById('avatarInitials').textContent = name.slice(0,2).toUpperCase();
+    })();
+
+    /* Load model status */
+    function loadModelStatus() {
+        fetch('/model/info')
+            .then(r => r.json())
+            .then(d => {
+                const trained = d.status === 'trained';
+                document.getElementById('statusDot').className = `status-dot ${trained ? 'trained' : 'untrained'}`;
+                document.getElementById('statusText').textContent = trained ? 'Model Ready' : 'No Model Trained';
+                document.getElementById('statusSub').textContent  = trained ? 'EfficientNetB4 loaded and active' : 'Train a model to enable predictions';
+            })
+            .catch(() => {});
+    }
+
+    function handleZip(input) {
+        const file = input.files[0];
+        if (!file) return;
+        selectedZip = file;
+        document.getElementById('zipName').textContent    = file.name;
+        document.getElementById('zipSelected').style.display = 'flex';
+        document.getElementById('zipZone').style.display  = 'none';
+    }
+
+    function removeZip() {
+        selectedZip = null;
+        document.getElementById('zipInput').value = '';
+        document.getElementById('zipSelected').style.display = 'none';
+        document.getElementById('zipZone').style.display     = 'block';
+    }
+
+    function addLog(msg, cls = 'info') {
+        const body = document.getElementById('logBody');
+        const line = document.createElement('div');
+        line.className = `log-line ${cls}`;
+        const ts = new Date().toLocaleTimeString();
+        line.textContent = `[${ts}] ${msg}`;
+        body.appendChild(line);
+        body.scrollTop = body.scrollHeight;
+    }
+
+    function updateProgress(status) {
+        const pct = status.progress || 0;
+        document.getElementById('progressPct').textContent  = `${pct}%`;
+        document.getElementById('progressFill').style.width = `${pct}%`;
+        document.getElementById('progressMsg').textContent  = status.message || '';
+        document.getElementById('progressStatus').textContent = status.running ? 'Running…' : (pct === 100 ? 'Complete' : 'Idle');
+        if (status.message) addLog(status.message, pct === 100 ? 'success' : status.error ? 'error' : 'accent');
+    }
+
+    function startPolling() {
+        if (pollInterval) return;
+        pollInterval = setInterval(() => {
+            fetch('/training/status')
+                .then(r => r.json())
+                .then(s => {
+                    updateProgress(s);
+                    if (!s.running) {
+                        clearInterval(pollInterval);
+                        pollInterval = null;
+                        document.getElementById('trainBtn').disabled = false;
+                        if (s.progress === 100) {
+                            addLog('Training complete! Model saved.', 'success');
+                            loadModelStatus();
+                        } else if (s.error) {
+                            addLog('Error: ' + s.error, 'error');
+                        }
+                    }
+                })
+                .catch(() => {});
+        }, 1500);
+    }
+
+    function startTraining() {
+        if (!selectedZip) { alert('Please select a dataset ZIP file.'); return; }
+        const epochs = parseInt(document.getElementById('epochInput').value) || 10;
+
+        const formData = new FormData();
+        formData.append('dataset_zip', selectedZip);
+        formData.append('epochs', epochs);
+
+        document.getElementById('trainBtn').disabled = true;
+        document.getElementById('logBody').innerHTML = '';
+        addLog(`Starting training — ${epochs} epochs`, 'accent');
+
+        fetch('/training/start', { method:'POST', body:formData })
+            .then(r => r.json())
+            .then(d => {
+                if (d.error) {
+                    addLog('Failed to start: ' + d.error, 'error');
+                    document.getElementById('trainBtn').disabled = false;
+                } else {
+                    addLog('Training job started on server', 'success');
+                    startPolling();
+                }
+            })
+            .catch(() => {
+                addLog('Network error starting training.', 'error');
+                document.getElementById('trainBtn').disabled = false;
+            });
+    }
+
+    /* Drag & drop on ZIP zone */
+    const zone = document.getElementById('zipZone');
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', ()  => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault(); zone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (!file || !file.name.endsWith('.zip')) { alert('Please drop a .zip file.'); return; }
+        const dt = new DataTransfer(); dt.items.add(file);
+        document.getElementById('zipInput').files = dt.files;
+        handleZip(document.getElementById('zipInput'));
+    });
+
+    window.addEventListener('load', () => {
+        loadModelStatus();
+        /* Check if training is already running */
+        fetch('/training/status')
+            .then(r => r.json())
+            .then(s => {
+                if (s.running) {
+                    document.getElementById('trainBtn').disabled = true;
+                    addLog('Training already in progress — reconnecting…', 'accent');
+                    startPolling();
+                }
+            })
+            .catch(() => {});
+    });
+</script>
+</body>
+</html>

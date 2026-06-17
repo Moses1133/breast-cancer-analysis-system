@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>About | BreastCancerAI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-base:       #0d1117;
+            --bg-surface:    #111827;
+            --bg-elevated:   #1f2937;
+            --border:        #1f2937;
+            --border-light:  #374151;
+            --text-primary:  #e2e8f0;
+            --text-secondary:#9ca3af;
+            --text-muted:    #6b7280;
+            --accent:        #818cf8;
+            --accent-dark:   #6366f1;
+            --accent-dim:    #1e1b4b;
+            --danger:        #f87171;
+            --success:       #34d399;
+            --warning:       #fbbf24;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+            background:var(--bg-base);
+            color:var(--text-primary);
+            min-height:100vh;
+            display:flex; flex-direction:column;
+            font-size:13px; line-height:1.5;
+        }
+        .topbar {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:0 24px; height:52px;
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .brand-pill  { display:flex; align-items:center; gap:8px; }
+        .brand-icon  {
+            width:28px; height:28px;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            border-radius:6px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; color:#fff;
+        }
+        .brand-name  { font-size:14px; font-weight:600; color:var(--accent); }
+        .separator   { width:1px; height:20px; background:var(--border-light); }
+        .page-title  { font-size:13px; color:var(--text-secondary); }
+        .topbar-right { display:flex; align-items:center; gap:10px; }
+        .user-pill {
+            display:flex; align-items:center; gap:8px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:20px; padding:4px 12px 4px 4px; cursor:pointer;
+        }
+        .avatar {
+            width:28px; height:28px;
+            background:linear-gradient(135deg,#7c3aed,#4f46e5);
+            border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:10px; font-weight:600; color:#ede9fe;
+        }
+        .user-name { font-size:11px; color:var(--text-primary); }
+        .nav-tabs-bar {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:0 24px;
+            display:flex; align-items:flex-end;
+        }
+        .nav-tab {
+            display:flex; align-items:center; gap:7px;
+            padding:12px 18px;
+            font-size:12px; font-weight:500;
+            color:var(--text-muted);
+            cursor:pointer; border-bottom:2px solid transparent;
+            text-decoration:none; transition:all 0.15s;
+        }
+        .nav-tab:hover { color:var(--text-secondary); }
+        .nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+        /* HERO */
+        .hero {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:40px 48px;
+            display:flex; align-items:center; gap:24px;
+        }
+        .hero-icon {
+            width:64px; height:64px;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            border-radius:16px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:28px; color:#fff; flex-shrink:0;
+        }
+        .hero-text h1 { font-size:22px; font-weight:700; color:var(--text-primary); margin-bottom:6px; }
+        .hero-text p  { font-size:13px; color:var(--text-secondary); max-width:600px; line-height:1.6; }
+        .hero-badge {
+            display:inline-flex; align-items:center; gap:6px;
+            background:var(--accent-dim);
+            border:1px solid rgba(129,140,248,0.3);
+            border-radius:20px; padding:4px 12px;
+            font-size:11px; color:var(--accent); margin-top:10px;
+        }
+
+        /* MAIN */
+        .about-content {
+            flex:1; display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:1px; background:var(--border);
+        }
+
+        /* SECTION PANEL */
+        .about-panel { background:var(--bg-surface); padding:28px; overflow-y:auto; }
+        .section-block { margin-bottom:28px; }
+        .section-block:last-child { margin-bottom:0; }
+        .block-title {
+            font-size:11px; font-weight:600;
+            text-transform:uppercase; letter-spacing:0.08em;
+            color:var(--text-muted); margin-bottom:14px;
+            display:flex; align-items:center; gap:8px;
+            padding-bottom:10px; border-bottom:1px solid var(--border);
+        }
+        .block-title i { color:var(--accent); }
+
+        /* Pipeline steps */
+        .pipeline-step {
+            display:flex; align-items:flex-start; gap:14px;
+            padding:12px 0; border-bottom:1px solid var(--border);
+        }
+        .pipeline-step:last-child { border-bottom:none; }
+        .step-num {
+            width:28px; height:28px;
+            background:var(--accent-dim);
+            border:1px solid var(--accent-dark);
+            border-radius:7px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:11px; font-weight:700; color:var(--accent); flex-shrink:0;
+        }
+        .step-body .s-title { font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:3px; }
+        .step-body .s-desc  { font-size:12px; color:var(--text-muted); line-height:1.5; }
+
+        /* Tech stack */
+        .tech-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .tech-card {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:8px; padding:12px 14px;
+            display:flex; align-items:center; gap:10px;
+        }
+        .tech-icon {
+            width:32px; height:32px;
+            background:var(--accent-dim);
+            border-radius:8px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:14px; color:var(--accent); flex-shrink:0;
+        }
+        .tech-name { font-size:12px; font-weight:600; color:var(--text-primary); }
+        .tech-role { font-size:10px; color:var(--text-muted); }
+
+        /* Metrics table */
+        .metrics-table { width:100%; border-collapse:collapse; }
+        .metrics-table th {
+            background:var(--bg-elevated);
+            padding:8px 12px; font-size:10px;
+            text-transform:uppercase; letter-spacing:0.07em;
+            color:var(--text-muted); text-align:left; font-weight:600;
+        }
+        .metrics-table td {
+            padding:10px 12px;
+            border-bottom:1px solid var(--border);
+            font-size:12px; color:var(--text-secondary);
+        }
+        .metrics-table tr:last-child td { border-bottom:none; }
+        .metric-val { font-weight:600; color:var(--success); }
+
+        /* Limitation items */
+        .limit-item {
+            display:flex; align-items:flex-start; gap:10px;
+            padding:10px 0; border-bottom:1px solid var(--border);
+            font-size:12px; color:var(--text-secondary); line-height:1.5;
+        }
+        .limit-item:last-child { border-bottom:none; }
+        .limit-item i { color:var(--warning); margin-top:1px; flex-shrink:0; }
+
+        /* Disclaimer banner */
+        .disclaimer-banner {
+            background:rgba(248,113,113,0.08);
+            border:1px solid rgba(248,113,113,0.2);
+            border-radius:10px; padding:16px 20px;
+            display:flex; align-items:flex-start; gap:14px;
+        }
+        .disclaimer-banner i { color:var(--danger); font-size:18px; flex-shrink:0; margin-top:2px; }
+        .disclaimer-banner .d-title { font-size:13px; font-weight:600; color:var(--danger); margin-bottom:6px; }
+        .disclaimer-banner .d-body  { font-size:12px; color:var(--text-secondary); line-height:1.6; }
+
+        /* CTA */
+        .cta-card {
+            background:linear-gradient(135deg,rgba(79,70,229,0.15),rgba(124,58,237,0.15));
+            border:1px solid rgba(129,140,248,0.2);
+            border-radius:10px; padding:20px;
+            text-align:center;
+        }
+        .cta-card h3 { font-size:15px; font-weight:700; color:var(--text-primary); margin-bottom:8px; }
+        .cta-card p  { font-size:12px; color:var(--text-secondary); margin-bottom:16px; line-height:1.5; }
+        .btn-cta {
+            display:inline-flex; align-items:center; gap:8px;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            border:none; border-radius:8px;
+            color:#fff; font-size:13px; font-weight:600;
+            padding:10px 24px; cursor:pointer;
+            text-decoration:none; transition:all 0.2s;
+        }
+        .btn-cta:hover {
+            background:linear-gradient(135deg,#6366f1,#9333ea);
+            transform:translateY(-1px);
+            box-shadow:0 6px 20px rgba(99,102,241,0.35);
+            color:#fff;
+        }
+
+        /* DROPDOWN */
+        .dropdown-dark .dropdown-menu {
+            background:var(--bg-surface);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            box-shadow:0 8px 30px rgba(0,0,0,0.4);
+        }
+        .dropdown-dark .dropdown-item { color:var(--text-secondary); font-size:12px; padding:8px 14px; }
+        .dropdown-dark .dropdown-item:hover { background:var(--bg-elevated); color:var(--text-primary); }
+
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-track { background:var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background:var(--bg-elevated); border-radius:4px; }
+
+        @media (max-width:768px) {
+            .about-content { grid-template-columns:1fr; }
+            .tech-grid    { grid-template-columns:1fr; }
+            .hero { padding:24px; flex-direction:column; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <div class="topbar-left">
+        <div class="brand-pill">
+            <div class="brand-icon"><i class="fas fa-dna"></i></div>
+            <span class="brand-name">BreastCancerAI</span>
+        </div>
+        <div class="separator"></div>
+        <span class="page-title">About</span>
+    </div>
+    <div class="topbar-right">
+        <div class="dropdown dropdown-dark">
+            <div class="user-pill dropdown-toggle" role="button" data-bs-toggle="dropdown">
+                <div class="avatar" id="avatarInitials">U</div>
+                <span class="user-name" id="usernameDisplay">{{ username }}</span>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-arrow-right-from-bracket me-2"></i>Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<!-- NAV TABS -->
+<div class="nav-tabs-bar">
+    <a href="/" class="nav-tab"><i class="fas fa-upload" style="font-size:11px"></i> Predict</a>
+    <a href="/training" class="nav-tab"><i class="fas fa-brain" style="font-size:11px"></i> Training</a>
+    <a href="/history" class="nav-tab"><i class="fas fa-clock-rotate-left" style="font-size:11px"></i> History</a>
+    <a href="/about" class="nav-tab active"><i class="fas fa-circle-info" style="font-size:11px"></i> About</a>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+    <div class="hero-icon"><i class="fas fa-dna"></i></div>
+    <div class="hero-text">
+        <h1>BreastCancerAI</h1>
+        <p>A deep learning platform for histopathology image analysis. Built on EfficientNetB4 transfer learning to assist in distinguishing benign from malignant breast tissue samples.</p>
+        <div class="hero-badge"><i class="fas fa-flask" style="font-size:10px"></i> Research Prototype — Not for Clinical Use</div>
+    </div>
+</div>
+
+<!-- CONTENT -->
+<div class="about-content">
+
+    <!-- LEFT PANEL -->
+    <div class="about-panel">
+
+        <!-- Analysis pipeline -->
+        <div class="section-block">
+            <div class="block-title"><i class="fas fa-sitemap"></i> How It Works</div>
+            <div class="pipeline-step">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                    <div class="s-title">Image Upload</div>
+                    <div class="s-desc">Upload a histopathology slide image in PNG, JPG, or TIFF format. Whole-slide SVS tiles are also accepted.</div>
+                </div>
+            </div>
+            <div class="pipeline-step">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                    <div class="s-title">Preprocessing</div>
+                    <div class="s-desc">The image is resized to 224×224, normalised, and prepared as a batch tensor matching the model's expected input.</div>
+                </div>
+            </div>
+            <div class="pipeline-step">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                    <div class="s-title">Deep Feature Extraction</div>
+                    <div class="s-desc">EfficientNetB4 — pre-trained on ImageNet — extracts rich convolutional features from cellular morphology patterns.</div>
+                </div>
+            </div>
+            <div class="pipeline-step">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                    <div class="s-title">Binary Classification</div>
+                    <div class="s-desc">A fully-connected sigmoid head outputs a probability score. Above 0.5 is classified as Malignant; below as Benign.</div>
+                </div>
+            </div>
+            <div class="pipeline-step">
+                <div class="step-num">5</div>
+                <div class="step-body">
+                    <div class="s-title">Report & Recommendations</div>
+                    <div class="s-desc">A structured pathology summary and clinical recommendations are generated based on the prediction and confidence score.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech stack -->
+        <div class="section-block">
+            <div class="block-title"><i class="fas fa-layer-group"></i> Technology Stack</div>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fab fa-python"></i></div>
+                    <div>
+                        <div class="tech-name">Python / Flask</div>
+                        <div class="tech-role">Backend & API</div>
+                    </div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fas fa-brain"></i></div>
+                    <div>
+                        <div class="tech-name">TensorFlow / Keras</div>
+                        <div class="tech-role">Deep learning engine</div>
+                    </div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fas fa-network-wired"></i></div>
+                    <div>
+                        <div class="tech-name">EfficientNetB4</div>
+                        <div class="tech-role">CNN architecture</div>
+                    </div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fas fa-database"></i></div>
+                    <div>
+                        <div class="tech-name">SQLite</div>
+                        <div class="tech-role">Prediction storage</div>
+                    </div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fas fa-chart-bar"></i></div>
+                    <div>
+                        <div class="tech-name">Chart.js</div>
+                        <div class="tech-role">Result visualisation</div>
+                    </div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon"><i class="fas fa-shield-halved"></i></div>
+                    <div>
+                        <div class="tech-name">Flask-Login</div>
+                        <div class="tech-role">Auth & sessions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="about-panel">
+
+        <!-- Model performance -->
+        <div class="section-block">
+            <div class="block-title"><i class="fas fa-chart-column"></i> Model Performance (Reference)</div>
+            <table class="metrics-table">
+                <thead>
+                    <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Accuracy</td>
+                        <td class="metric-val">~85–92%</td>
+                        <td style="color:var(--text-muted)">Varies by dataset</td>
+                    </tr>
+                    <tr>
+                        <td>AUC-ROC</td>
+                        <td class="metric-val">~0.90</td>
+                        <td style="color:var(--text-muted)">Binary classification</td>
+                    </tr>
+                    <tr>
+                        <td>Architecture</td>
+                        <td style="color:var(--text-secondary)">EfficientNetB4</td>
+                        <td style="color:var(--text-muted)">Transfer learning</td>
+                    </tr>
+                    <tr>
+                        <td>Input</td>
+                        <td style="color:var(--text-secondary)">224×224 RGB</td>
+                        <td style="color:var(--text-muted)">Normalised [0,1]</td>
+                    </tr>
+                    <tr>
+                        <td>Output</td>
+                        <td style="color:var(--text-secondary)">Sigmoid [0–1]</td>
+                        <td style="color:var(--text-muted)">Threshold = 0.5</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="font-size:11px;color:var(--text-muted);margin-top:10px">
+                <i class="fas fa-circle-info me-1"></i> Performance figures are indicative. Actual accuracy depends on the dataset used for training.
+            </p>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section-block">
+            <div class="block-title"><i class="fas fa-triangle-exclamation"></i> Known Limitations</div>
+            <div class="limit-item">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Model performance is highly dependent on dataset quality and size. Small or unbalanced training sets will degrade accuracy.</span>
+            </div>
+            <div class="limit-item">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Predictions are based on visual patterns only — no clinical metadata, patient history, or molecular markers are considered.</span>
+            </div>
+            <div class="limit-item">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>The model may not generalise well to images from staining protocols or scanner equipment not represented in its training data.</span>
+            </div>
+            <div class="limit-item">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Confidence scores reflect model certainty, not clinical probability. A 95% confidence score does not mean 95% clinical accuracy.</span>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="section-block">
+            <div class="disclaimer-banner">
+                <i class="fas fa-shield-exclamation"></i>
+                <div>
+                    <div class="d-title">Medical Disclaimer</div>
+                    <div class="d-body">
+                        BreastCancerAI is an academic research prototype developed for educational and experimental purposes only. It is <strong>not</strong> a certified medical device, has not been validated in clinical settings, and must not be used to inform patient care or clinical decisions without review by a qualified pathologist or oncologist. Always consult licensed medical professionals for diagnosis and treatment.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-card">
+            <h3>Ready to analyse an image?</h3>
+            <p>Upload a histopathology slide and get an AI-assisted prediction with a detailed pathology report in seconds.</p>
+            <a href="/" class="btn-cta">
+                <i class="fas fa-microscope"></i> Go to Predict
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    (function(){
+        const name = document.getElementById('usernameDisplay').textContent.trim();
+        if (name) document.getElementById('avatarInitials').textContent = name.slice(0,2).toUpperCase();
+    })();
+</script>
+</body>
+</html>

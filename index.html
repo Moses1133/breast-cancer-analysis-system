@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>BreastCancerAI | Histopathology Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-base:      #0d1117;
+            --bg-surface:   #111827;
+            --bg-elevated:  #1f2937;
+            --border:       #1f2937;
+            --border-light: #374151;
+            --text-primary: #e2e8f0;
+            --text-secondary:#9ca3af;
+            --text-muted:   #6b7280;
+            --accent:       #818cf8;
+            --accent-dark:  #6366f1;
+            --accent-dim:   #1e1b4b;
+            --danger:       #f87171;
+            --success:      #34d399;
+            --warning:      #fbbf24;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+            background:var(--bg-base);
+            color:var(--text-primary);
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+            font-size:13px;
+            line-height:1.5;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:0 24px;
+            height:52px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            position:sticky;
+            top:0;
+            z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .brand-pill  { display:flex; align-items:center; gap:8px; }
+        .brand-icon  {
+            width:28px; height:28px;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            border-radius:6px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; color:#fff;
+        }
+        .brand-name { font-size:14px; font-weight:600; color:var(--accent); }
+        .separator  { width:1px; height:20px; background:var(--border-light); }
+        .page-title { font-size:13px; color:var(--text-secondary); }
+        .topbar-right { display:flex; align-items:center; gap:10px; }
+        .user-pill {
+            display:flex; align-items:center; gap:8px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:20px;
+            padding:4px 12px 4px 4px;
+            cursor:pointer;
+        }
+        .avatar {
+            width:28px; height:28px;
+            background:linear-gradient(135deg,#7c3aed,#4f46e5);
+            border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:10px; font-weight:600; color:#ede9fe;
+        }
+        .user-name { font-size:11px; color:var(--text-primary); }
+
+        /* ── NAV TABS ── */
+        .nav-tabs-bar {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:0 24px;
+            display:flex;
+            align-items:flex-end;
+        }
+        .nav-tab {
+            display:flex; align-items:center; gap:7px;
+            padding:12px 18px;
+            font-size:12px; font-weight:500;
+            color:var(--text-muted);
+            cursor:pointer;
+            border-bottom:2px solid transparent;
+            text-decoration:none;
+            transition:all 0.15s;
+        }
+        .nav-tab:hover { color:var(--text-secondary); }
+        .nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+        /* ── MAIN GRID ── */
+        .main-content {
+            flex:1;
+            display:grid;
+            grid-template-columns:420px 1fr;
+            gap:1px;
+            background:var(--border);
+        }
+
+        /* ── LEFT PANEL ── */
+        .upload-panel {
+            background:var(--bg-surface);
+            padding:24px;
+            overflow-y:auto;
+        }
+        .section-header {
+            display:flex; align-items:center; gap:8px;
+            margin-bottom:20px;
+            padding-bottom:12px;
+            border-bottom:1px solid var(--border);
+        }
+        .section-header h2 { font-size:14px; font-weight:600; color:var(--text-primary); }
+
+        /* ── BATCH TOGGLE ── */
+        .batch-toggle {
+            display:flex; align-items:center; gap:10px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            padding:10px 14px;
+            margin-bottom:16px;
+            cursor:pointer;
+            user-select:none;
+            transition:border-color 0.15s;
+        }
+        .batch-toggle:hover { border-color:var(--accent); }
+        .toggle-switch {
+            width:32px; height:18px;
+            background:var(--border-light);
+            border-radius:9px;
+            position:relative;
+            transition:background 0.2s;
+            flex-shrink:0;
+        }
+        .toggle-switch.on { background:var(--accent-dark); }
+        .toggle-switch::after {
+            content:'';
+            position:absolute;
+            width:12px; height:12px;
+            background:#fff;
+            border-radius:50%;
+            top:3px; left:3px;
+            transition:left 0.2s;
+        }
+        .toggle-switch.on::after { left:17px; }
+        .toggle-label { font-size:12px; color:var(--text-secondary); }
+        .toggle-label span { font-size:10px; color:var(--text-muted); display:block; }
+
+        /* ── UPLOAD ZONE ── */
+        .upload-zone {
+            background:var(--bg-elevated);
+            border:1.5px dashed var(--border-light);
+            border-radius:12px;
+            padding:40px 20px;
+            text-align:center;
+            cursor:pointer;
+            transition:all 0.2s;
+            position:relative;
+            margin-bottom:16px;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color:var(--accent);
+            background:rgba(99,102,241,0.05);
+        }
+        .upload-zone input[type="file"] {
+            position:absolute; inset:0;
+            opacity:0; cursor:pointer;
+            width:100%; height:100%;
+        }
+        .upload-icon {
+            width:52px; height:52px;
+            background:var(--accent-dim);
+            border-radius:12px;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 14px;
+            font-size:22px; color:var(--accent);
+        }
+        .upload-zone h3 { font-size:14px; font-weight:600; color:var(--text-primary); margin-bottom:6px; }
+        .upload-zone p  { font-size:11px; color:var(--text-muted); margin-bottom:14px; }
+        .btn-browse {
+            display:inline-flex; align-items:center; gap:6px;
+            background:var(--accent-dim);
+            border:1px solid var(--accent-dark);
+            border-radius:8px;
+            color:var(--accent);
+            font-size:12px; font-weight:500;
+            padding:7px 16px;
+            pointer-events:none;
+        }
+
+        /* ── FORMAT CHIPS ── */
+        .format-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+        .chip {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:20px;
+            padding:3px 10px;
+            font-size:10px; color:var(--text-muted);
+        }
+
+        /* ── PREVIEW ── */
+        #previewArea {
+            display:none;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:10px;
+            padding:12px;
+            margin-top:14px;
+        }
+        #previewImg { width:100%; border-radius:8px; max-height:200px; object-fit:cover; }
+        .preview-meta {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-top:10px;
+        }
+        .preview-meta .filename {
+            font-size:11px; color:var(--text-secondary);
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+            max-width:220px;
+        }
+        .btn-clear {
+            background:none; border:none;
+            color:var(--text-muted); cursor:pointer;
+            font-size:12px;
+            display:flex; align-items:center; gap:4px;
+            transition:color 0.15s;
+        }
+        .btn-clear:hover { color:var(--danger); }
+
+        /* ── ANALYZE BUTTON ── */
+        .btn-analyze {
+            width:100%;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            border:none; border-radius:10px;
+            color:#fff; font-size:13px; font-weight:600;
+            padding:13px;
+            cursor:pointer;
+            transition:all 0.2s;
+            display:flex; align-items:center; justify-content:center; gap:8px;
+            margin-top:16px;
+        }
+        .btn-analyze:hover:not(:disabled) {
+            background:linear-gradient(135deg,#6366f1,#9333ea);
+            transform:translateY(-1px);
+            box-shadow:0 6px 20px rgba(99,102,241,0.35);
+        }
+        .btn-analyze:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+
+        .alert-warn-dark {
+            background:rgba(245,158,11,0.1);
+            border:1px solid rgba(245,158,11,0.25);
+            border-radius:8px;
+            padding:10px 14px;
+            font-size:11px; color:var(--warning);
+            margin-top:16px;
+        }
+
+        /* ── RIGHT PANEL ── */
+        .info-panel {
+            background:var(--bg-surface);
+            padding:24px;
+            overflow-y:auto;
+            display:flex; flex-direction:column; gap:16px;
+        }
+
+        /* ── STAT GRID ── */
+        .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+        .stat-card {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:10px;
+            padding:14px 16px;
+        }
+        .stat-card .sc-label {
+            font-size:10px; text-transform:uppercase;
+            letter-spacing:0.06em; color:var(--text-muted); margin-bottom:6px;
+        }
+        .stat-card .sc-val { font-size:22px; font-weight:600; }
+        .sc-val.accent  { color:var(--accent); }
+        .sc-val.danger  { color:var(--danger); }
+        .sc-val.success { color:var(--success); }
+
+        /* ── INFO BLOCK ── */
+        .info-block {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:10px;
+            padding:16px;
+        }
+        .info-block-title {
+            font-size:10px; text-transform:uppercase;
+            letter-spacing:0.08em; color:var(--text-muted);
+            font-weight:600; margin-bottom:12px;
+            display:flex; align-items:center; gap:6px;
+        }
+        .info-block-title i { color:var(--accent); font-size:12px; }
+
+        /* ── PIPELINE ── */
+        .pipeline-step {
+            display:flex; align-items:flex-start; gap:12px;
+            padding:10px 0;
+            border-bottom:1px solid var(--border);
+        }
+        .pipeline-step:last-child { border-bottom:none; }
+        .step-num {
+            width:24px; height:24px;
+            background:var(--accent-dim);
+            border:1px solid var(--accent-dark);
+            border-radius:6px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:10px; font-weight:700; color:var(--accent);
+            flex-shrink:0;
+        }
+        .step-body .s-title { font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:2px; }
+        .step-body .s-desc  { font-size:11px; color:var(--text-muted); }
+
+        /* ── RECENT CASES ── */
+        .case-row {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:8px 0;
+            border-bottom:1px solid var(--border);
+        }
+        .case-row:last-child { border-bottom:none; }
+        .case-left { display:flex; align-items:center; gap:10px; }
+        .case-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .case-dot.malignant { background:var(--danger); }
+        .case-dot.benign    { background:var(--success); }
+        .case-id   { font-size:12px; color:var(--text-secondary); }
+        .case-date { font-size:10px; color:var(--text-muted); }
+        .case-badge {
+            font-size:10px; font-weight:600;
+            padding:2px 8px; border-radius:4px;
+        }
+        .case-badge.malignant { background:rgba(248,113,113,0.15); color:var(--danger); }
+        .case-badge.benign    { background:rgba(52,211,153,0.12);  color:var(--success); }
+
+        /* ── LOADING OVERLAY ── */
+        .loading-overlay {
+            display:none;
+            position:fixed; inset:0;
+            background:rgba(13,17,23,0.88);
+            z-index:999;
+            flex-direction:column;
+            align-items:center; justify-content:center; gap:16px;
+        }
+        .loading-overlay.active { display:flex; }
+        .loading-spinner {
+            width:52px; height:52px;
+            border:3px solid var(--border-light);
+            border-top-color:var(--accent);
+            border-radius:50%;
+            animation:spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .loading-text  { font-size:13px; color:var(--text-secondary); }
+        .loading-sub   { font-size:11px; color:var(--text-muted); }
+
+        /* ── DROPDOWN ── */
+        .dropdown-dark .dropdown-menu {
+            background:var(--bg-surface);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            box-shadow:0 8px 30px rgba(0,0,0,0.4);
+        }
+        .dropdown-dark .dropdown-item { color:var(--text-secondary); font-size:12px; padding:8px 14px; }
+        .dropdown-dark .dropdown-item:hover { background:var(--bg-elevated); color:var(--text-primary); }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-track { background:var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background:var(--bg-elevated); border-radius:4px; }
+
+        @media (max-width:768px) {
+            .main-content { grid-template-columns:1fr; }
+            .stat-grid    { grid-template-columns:1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Analysing image with EfficientNetB4…</div>
+    <div class="loading-sub">This usually takes a few seconds</div>
+</div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <div class="topbar-left">
+        <div class="brand-pill">
+            <div class="brand-icon"><i class="fas fa-dna"></i></div>
+            <span class="brand-name">BreastCancerAI</span>
+        </div>
+        <div class="separator"></div>
+        <span class="page-title">Histopathology Analysis Platform</span>
+    </div>
+    <div class="topbar-right">
+        <div class="dropdown dropdown-dark">
+            <div class="user-pill dropdown-toggle" role="button" data-bs-toggle="dropdown">
+                <div class="avatar" id="avatarInitials">U</div>
+                <span class="user-name" id="usernameDisplay">{{ username }}</span>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-arrow-right-from-bracket me-2"></i>Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<!-- NAV TABS -->
+<div class="nav-tabs-bar">
+    <a href="/" class="nav-tab active">
+        <i class="fas fa-upload" style="font-size:11px"></i> Predict
+    </a>
+    <a href="/training" class="nav-tab">
+        <i class="fas fa-brain" style="font-size:11px"></i> Training
+    </a>
+    <a href="/history" class="nav-tab">
+        <i class="fas fa-clock-rotate-left" style="font-size:11px"></i> History
+    </a>
+    <a href="/about" class="nav-tab">
+        <i class="fas fa-circle-info" style="font-size:11px"></i> About
+    </a>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main-content">
+
+    <!-- LEFT: Upload Panel -->
+    <div class="upload-panel">
+        <div class="section-header">
+            <i class="fas fa-upload" style="color:var(--accent)"></i>
+            <h2>Upload Image</h2>
+        </div>
+
+        <!-- Batch toggle -->
+        <div class="batch-toggle" id="batchToggle" onclick="toggleBatch()">
+            <div class="toggle-switch" id="batchSwitch"></div>
+            <div class="toggle-label">
+                Batch mode
+                <span>Analyse multiple images at once</span>
+            </div>
+        </div>
+
+        <!-- Upload zone -->
+        <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" accept="image/*" onchange="handleFile(this)">
+            <div class="upload-icon"><i class="fas fa-image"></i></div>
+            <h3>Drag &amp; drop a histopathology image</h3>
+            <p>or click anywhere to browse your files</p>
+            <div class="btn-browse"><i class="fas fa-folder-open"></i> Browse</div>
+        </div>
+
+        <div class="format-chips">
+            <div class="chip"><i class="fas fa-file-image" style="margin-right:4px"></i>PNG</div>
+            <div class="chip"><i class="fas fa-file-image" style="margin-right:4px"></i>JPG</div>
+            <div class="chip"><i class="fas fa-file-image" style="margin-right:4px"></i>TIFF</div>
+            <div class="chip"><i class="fas fa-file-image" style="margin-right:4px"></i>SVS</div>
+            <div class="chip">Max 50 MB</div>
+        </div>
+
+        <!-- Preview -->
+        <div id="previewArea">
+            <img id="previewImg" src="" alt="Selected image preview">
+            <div class="preview-meta">
+                <span class="filename" id="previewName">—</span>
+                <button class="btn-clear" onclick="clearFile()">
+                    <i class="fas fa-xmark"></i> Remove
+                </button>
+            </div>
+        </div>
+
+        <!-- Analyze -->
+        <button class="btn-analyze" id="analyzeBtn" disabled onclick="submitAnalysis()">
+            <i class="fas fa-microscope"></i> Analyze Image
+        </button>
+
+        <div class="alert-warn-dark">
+            <i class="fas fa-triangle-exclamation me-1"></i>
+            <strong>Medical Disclaimer:</strong> Research prototype only — not for standalone clinical use. Always consult a qualified pathologist.
+        </div>
+    </div>
+
+    <!-- RIGHT: Info Panel -->
+    <div class="info-panel">
+
+        <div>
+            <div class="section-header" style="margin-bottom:14px">
+                <i class="fas fa-chart-column" style="color:var(--accent)"></i>
+                <h2>System Overview</h2>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="sc-label">Total Analyses</div>
+                    <div class="sc-val accent" id="totalCount">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-label">Malignant</div>
+                    <div class="sc-val danger" id="malCount">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-label">Benign</div>
+                    <div class="sc-val success" id="benCount">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipeline -->
+        <div class="info-block">
+            <div class="info-block-title"><i class="fas fa-sitemap"></i> Analysis Pipeline</div>
+            <div class="pipeline-step">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                    <div class="s-title">Image Preprocessing</div>
+                    <div class="s-desc">Resize, normalise, and augment the histopathology slide</div>
+                </div>
+            </div>
+            <div class="pipeline-step">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                    <div class="s-title">Feature Extraction</div>
+                    <div class="s-desc">EfficientNetB4 extracts deep convolutional features</div>
+                </div>
+            </div>
+            <div class="pipeline-step">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                    <div class="s-title">Classification</div>
+                    <div class="s-desc">Softmax head predicts benign vs malignant probability</div>
+                </div>
+            </div>
+            <div class="pipeline-step">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                    <div class="s-title">Report Generation</div>
+                    <div class="s-desc">Pathology summary and clinical recommendations produced</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent cases -->
+        <div class="info-block">
+            <div class="info-block-title"><i class="fas fa-clock-rotate-left"></i> Recent Cases</div>
+            <div id="recentCases">
+                <div style="text-align:center;padding:20px 0;color:var(--text-muted);font-size:12px">
+                    <i class="fas fa-spinner fa-spin" style="display:block;margin-bottom:8px"></i>
+                    Loading recent cases…
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    /* ── Avatar initials from Jinja username ── */
+    (function(){
+        const name = document.getElementById('usernameDisplay').textContent.trim();
+        if (name) document.getElementById('avatarInitials').textContent = name.slice(0,2).toUpperCase();
+    })();
+
+    let batchMode = false;
+    let selectedFile = null;
+
+    function toggleBatch() {
+        batchMode = !batchMode;
+        document.getElementById('batchSwitch').classList.toggle('on', batchMode);
+        document.getElementById('fileInput').multiple = batchMode;
+    }
+
+    function handleFile(input) {
+        const file = input.files[0];
+        if (!file) return;
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('previewName').textContent = file.name;
+            document.getElementById('previewArea').style.display = 'block';
+            document.getElementById('analyzeBtn').disabled = false;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearFile() {
+        selectedFile = null;
+        document.getElementById('fileInput').value = '';
+        document.getElementById('previewArea').style.display = 'none';
+        document.getElementById('analyzeBtn').disabled = true;
+    }
+
+    /* Drag & drop */
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', ()  => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('fileInput').files = dt.files;
+        handleFile(document.getElementById('fileInput'));
+    });
+
+    /* ── Submit to Flask /predict then redirect ── */
+    function submitAnalysis() {
+        if (!selectedFile) return;
+
+        document.getElementById('loadingOverlay').classList.add('active');
+        document.getElementById('analyzeBtn').disabled = true;
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        fetch('/predict', { method:'POST', body:formData })
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                if (data.success) {
+                    /* Store result so analysis.html can read it */
+                    sessionStorage.setItem('analysisData', JSON.stringify(data));
+                    window.location.href = '/analysis';
+                } else {
+                    document.getElementById('analyzeBtn').disabled = false;
+                    alert('Analysis failed: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(() => {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                document.getElementById('analyzeBtn').disabled = false;
+                alert('Network error. Please try again.');
+            });
+    }
+
+    /* ── Load stats + recent cases ── */
+    window.addEventListener('load', () => {
+        fetch('/stats')
+            .then(r => r.json())
+            .then(stats => {
+                const total = stats.length;
+                const mal   = stats.filter(s => s.prediction === 'Malignant').length;
+                const ben   = total - mal;
+                document.getElementById('totalCount').textContent = total || '0';
+                document.getElementById('malCount').textContent   = mal   || '0';
+                document.getElementById('benCount').textContent   = ben   || '0';
+
+                const container = document.getElementById('recentCases');
+                if (!stats.length) {
+                    container.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text-muted);font-size:12px">No cases analysed yet</div>';
+                    return;
+                }
+                const recent = [...stats].reverse().slice(0, 6);
+                container.innerHTML = recent.map((s, i) => {
+                    const isMal = s.prediction === 'Malignant';
+                    const date  = s.timestamp ? s.timestamp.split(' ')[0] : '—';
+                    return `
+                    <div class="case-row">
+                        <div class="case-left">
+                            <div class="case-dot ${isMal ? 'malignant' : 'benign'}"></div>
+                            <div>
+                                <div class="case-id">Case #${String(total - i).padStart(3,'0')}</div>
+                                <div class="case-date">${date} &nbsp;·&nbsp; ${(s.confidence*100).toFixed(1)}% confidence</div>
+                            </div>
+                        </div>
+                        <span class="case-badge ${isMal ? 'malignant' : 'benign'}">${s.prediction}</span>
+                    </div>`;
+                }).join('');
+            })
+            .catch(() => {
+                ['totalCount','malCount','benCount'].forEach(id => document.getElementById(id).textContent = '—');
+                document.getElementById('recentCases').innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:12px 0">Could not load cases</div>';
+            });
+    });
+</script>

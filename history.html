@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>History | BreastCancerAI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-base:       #0d1117;
+            --bg-surface:    #111827;
+            --bg-elevated:   #1f2937;
+            --border:        #1f2937;
+            --border-light:  #374151;
+            --text-primary:  #e2e8f0;
+            --text-secondary:#9ca3af;
+            --text-muted:    #6b7280;
+            --accent:        #818cf8;
+            --accent-dark:   #6366f1;
+            --accent-dim:    #1e1b4b;
+            --danger:        #f87171;
+            --success:       #34d399;
+            --warning:       #fbbf24;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+            background:var(--bg-base);
+            color:var(--text-primary);
+            min-height:100vh;
+            display:flex; flex-direction:column;
+            font-size:13px; line-height:1.5;
+        }
+
+        /* TOPBAR */
+        .topbar {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:0 24px; height:52px;
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .brand-pill  { display:flex; align-items:center; gap:8px; }
+        .brand-icon  {
+            width:28px; height:28px;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            border-radius:6px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; color:#fff;
+        }
+        .brand-name  { font-size:14px; font-weight:600; color:var(--accent); }
+        .separator   { width:1px; height:20px; background:var(--border-light); }
+        .page-title  { font-size:13px; color:var(--text-secondary); }
+        .topbar-right { display:flex; align-items:center; gap:10px; }
+        .user-pill {
+            display:flex; align-items:center; gap:8px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:20px; padding:4px 12px 4px 4px;
+            cursor:pointer;
+        }
+        .avatar {
+            width:28px; height:28px;
+            background:linear-gradient(135deg,#7c3aed,#4f46e5);
+            border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:10px; font-weight:600; color:#ede9fe;
+        }
+        .user-name { font-size:11px; color:var(--text-primary); }
+
+        /* NAV TABS */
+        .nav-tabs-bar {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:0 24px;
+            display:flex; align-items:flex-end;
+        }
+        .nav-tab {
+            display:flex; align-items:center; gap:7px;
+            padding:12px 18px;
+            font-size:12px; font-weight:500;
+            color:var(--text-muted);
+            cursor:pointer;
+            border-bottom:2px solid transparent;
+            text-decoration:none;
+            transition:all 0.15s;
+        }
+        .nav-tab:hover { color:var(--text-secondary); }
+        .nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+        /* SUMMARY BAR */
+        .summary-bar {
+            display:grid; grid-template-columns:repeat(4,1fr);
+            gap:1px; background:var(--border);
+            border-bottom:1px solid var(--border);
+        }
+        .summary-cell { background:var(--bg-surface); padding:14px 20px; }
+        .summary-cell .s-label {
+            font-size:10px; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;
+        }
+        .summary-cell .s-val { font-size:20px; font-weight:600; }
+        .s-val.accent  { color:var(--accent); }
+        .s-val.danger  { color:var(--danger); }
+        .s-val.success { color:var(--success); }
+        .s-val.neutral { color:var(--text-secondary); font-size:13px; }
+
+        /* MAIN */
+        .main-content { flex:1; display:flex; flex-direction:column; }
+
+        /* TOOLBAR */
+        .toolbar {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:12px 24px;
+            display:flex; align-items:center; justify-content:space-between; gap:12px;
+            flex-wrap:wrap;
+        }
+        .toolbar-left { display:flex; align-items:center; gap:10px; }
+        .search-box {
+            display:flex; align-items:center; gap:8px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            padding:7px 12px;
+            width:260px;
+        }
+        .search-box i { color:var(--text-muted); font-size:11px; }
+        .search-box input {
+            background:none; border:none; outline:none;
+            color:var(--text-primary); font-size:12px; width:100%;
+        }
+        .search-box input::placeholder { color:var(--text-muted); }
+        .filter-select {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            color:var(--text-secondary);
+            font-size:12px;
+            padding:7px 12px;
+            cursor:pointer;
+            outline:none;
+        }
+        .filter-select:focus { border-color:var(--accent); }
+        .btn-clear-history {
+            display:flex; align-items:center; gap:6px;
+            background:rgba(248,113,113,0.1);
+            border:1px solid rgba(248,113,113,0.25);
+            border-radius:8px;
+            color:var(--danger);
+            font-size:12px; font-weight:500;
+            padding:7px 14px;
+            cursor:pointer; transition:all 0.15s;
+        }
+        .btn-clear-history:hover { background:rgba(248,113,113,0.2); border-color:var(--danger); }
+
+        /* TABLE */
+        .table-wrap { flex:1; overflow-x:auto; padding:24px; }
+        .history-table {
+            width:100%; border-collapse:collapse;
+        }
+        .history-table th {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border-light);
+            padding:10px 16px;
+            font-size:10px; text-transform:uppercase;
+            letter-spacing:0.07em; color:var(--text-muted);
+            font-weight:600; text-align:left;
+            white-space:nowrap;
+        }
+        .history-table td {
+            padding:12px 16px;
+            border-bottom:1px solid var(--border);
+            font-size:12px; color:var(--text-secondary);
+            vertical-align:middle;
+        }
+        .history-table tr:hover td { background:rgba(255,255,255,0.02); }
+        .history-table tr:last-child td { border-bottom:none; }
+
+        .row-id { font-size:11px; color:var(--text-muted); font-family:monospace; }
+        .row-filename {
+            color:var(--text-primary); font-weight:500;
+            max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+        }
+        .badge-pred {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:3px 10px; border-radius:5px;
+            font-size:11px; font-weight:600;
+        }
+        .badge-pred.malignant { background:rgba(248,113,113,0.15); color:var(--danger); }
+        .badge-pred.benign    { background:rgba(52,211,153,0.12);  color:var(--success); }
+
+        .conf-mini {
+            display:flex; align-items:center; gap:8px;
+        }
+        .conf-mini-bar {
+            width:60px; height:5px;
+            background:rgba(255,255,255,0.08);
+            border-radius:3px; overflow:hidden;
+        }
+        .conf-mini-fill {
+            height:100%;
+            background:linear-gradient(90deg,#4f46e5,#7c3aed);
+            border-radius:3px;
+        }
+
+        .btn-detail {
+            display:inline-flex; align-items:center; gap:5px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:6px;
+            color:var(--text-muted);
+            font-size:11px; padding:5px 10px;
+            cursor:pointer; transition:all 0.15s;
+            white-space:nowrap;
+        }
+        .btn-detail:hover { border-color:var(--accent); color:var(--accent); }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align:center;
+            padding:80px 20px;
+            color:var(--text-muted);
+        }
+        .empty-state i { font-size:3rem; color:var(--border-light); display:block; margin-bottom:16px; }
+        .empty-state p { color:var(--text-secondary); margin-bottom:6px; }
+        .empty-state small { font-size:11px; }
+
+        /* MODAL */
+        .modal-dark .modal-content {
+            background:var(--bg-surface);
+            border:1px solid var(--border-light);
+            border-radius:12px;
+            color:var(--text-primary);
+        }
+        .modal-dark .modal-header {
+            border-bottom:1px solid var(--border);
+            padding:16px 20px;
+        }
+        .modal-dark .modal-title { font-size:14px; font-weight:600; }
+        .modal-dark .btn-close { filter:invert(1) opacity(0.5); }
+        .modal-dark .modal-body { padding:20px; }
+        .modal-dark .modal-footer {
+            border-top:1px solid var(--border);
+            padding:12px 20px;
+        }
+        .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+        .detail-card {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            padding:12px 14px;
+        }
+        .detail-card .dc-label {
+            font-size:10px; text-transform:uppercase;
+            letter-spacing:0.07em; color:var(--text-muted); margin-bottom:4px;
+        }
+        .detail-card .dc-val { font-size:16px; font-weight:600; color:var(--text-primary); }
+        .detail-section {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            padding:14px 16px;
+            margin-bottom:12px;
+        }
+        .detail-section-title {
+            font-size:10px; text-transform:uppercase;
+            letter-spacing:0.08em; color:var(--text-muted);
+            font-weight:600; margin-bottom:10px;
+            display:flex; align-items:center; gap:6px;
+        }
+        .detail-section-title i { color:var(--accent); }
+        .detail-section div { font-size:12px; color:var(--text-secondary); line-height:1.6; }
+
+        /* DROPDOWN */
+        .dropdown-dark .dropdown-menu {
+            background:var(--bg-surface);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            box-shadow:0 8px 30px rgba(0,0,0,0.4);
+        }
+        .dropdown-dark .dropdown-item { color:var(--text-secondary); font-size:12px; padding:8px 14px; }
+        .dropdown-dark .dropdown-item:hover { background:var(--bg-elevated); color:var(--text-primary); }
+
+        ::-webkit-scrollbar { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background:var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background:var(--bg-elevated); border-radius:4px; }
+
+        @media (max-width:768px) {
+            .summary-bar { grid-template-columns:1fr 1fr; }
+            .toolbar { flex-direction:column; align-items:stretch; }
+            .search-box { width:100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <div class="topbar-left">
+        <div class="brand-pill">
+            <div class="brand-icon"><i class="fas fa-dna"></i></div>
+            <span class="brand-name">BreastCancerAI</span>
+        </div>
+        <div class="separator"></div>
+        <span class="page-title">Prediction History</span>
+    </div>
+    <div class="topbar-right">
+        <div class="dropdown dropdown-dark">
+            <div class="user-pill dropdown-toggle" role="button" data-bs-toggle="dropdown">
+                <div class="avatar" id="avatarInitials">U</div>
+                <span class="user-name" id="usernameDisplay">{{ username }}</span>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-arrow-right-from-bracket me-2"></i>Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<!-- NAV TABS -->
+<div class="nav-tabs-bar">
+    <a href="/" class="nav-tab"><i class="fas fa-upload" style="font-size:11px"></i> Predict</a>
+    <a href="/training" class="nav-tab"><i class="fas fa-brain" style="font-size:11px"></i> Training</a>
+    <a href="/history" class="nav-tab active"><i class="fas fa-clock-rotate-left" style="font-size:11px"></i> History</a>
+    <a href="/about" class="nav-tab"><i class="fas fa-circle-info" style="font-size:11px"></i> About</a>
+</div>
+
+<!-- SUMMARY BAR -->
+<div class="summary-bar">
+    <div class="summary-cell">
+        <div class="s-label">Total Cases</div>
+        <div class="s-val accent" id="sumTotal">—</div>
+    </div>
+    <div class="summary-cell">
+        <div class="s-label">Malignant</div>
+        <div class="s-val danger" id="sumMal">—</div>
+    </div>
+    <div class="summary-cell">
+        <div class="s-label">Benign</div>
+        <div class="s-val success" id="sumBen">—</div>
+    </div>
+    <div class="summary-cell">
+        <div class="s-label">Avg Confidence</div>
+        <div class="s-val neutral" id="sumConf">—</div>
+    </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+    <div class="toolbar-left">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search by filename…" oninput="filterTable()">
+        </div>
+        <select class="filter-select" id="filterSelect" onchange="filterTable()">
+            <option value="all">All predictions</option>
+            <option value="Malignant">Malignant only</option>
+            <option value="Benign">Benign only</option>
+        </select>
+    </div>
+    <button class="btn-clear-history" onclick="confirmClear()">
+        <i class="fas fa-trash"></i> Clear History
+    </button>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+    <div id="loadingState" style="text-align:center;padding:60px 0;color:var(--text-muted)">
+        <i class="fas fa-spinner fa-spin" style="font-size:2rem;display:block;margin-bottom:12px"></i>
+        Loading history…
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none">
+        <i class="fas fa-clock-rotate-left"></i>
+        <p>No predictions yet</p>
+        <small>Upload and analyse an image to see your history here.</small><br><br>
+        <a href="/" style="color:var(--accent);font-size:12px;text-decoration:none">
+            <i class="fas fa-arrow-left me-1"></i> Go to Predict
+        </a>
+    </div>
+    <table class="history-table" id="historyTable" style="display:none">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Filename</th>
+                <th>Prediction</th>
+                <th>Confidence</th>
+                <th>Date &amp; Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+    </table>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal fade modal-dark" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-microscope me-2" style="color:var(--accent)"></i>Prediction Detail</span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailBody">
+                <div style="text-align:center;padding:30px;color:var(--text-muted)">
+                    <i class="fas fa-spinner fa-spin"></i> Loading…
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-detail" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIRM CLEAR MODAL -->
+<div class="modal fade modal-dark" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-triangle-exclamation me-2" style="color:var(--warning)"></i>Clear All History</span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p style="color:var(--text-secondary);font-size:13px">This will permanently delete all your prediction records. This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer" style="gap:8px">
+                <button type="button" class="btn-detail" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-clear-history" onclick="clearHistory()">
+                    <i class="fas fa-trash"></i> Yes, clear everything
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allRows = [];
+
+    (function(){
+        const name = document.getElementById('usernameDisplay').textContent.trim();
+        if (name) document.getElementById('avatarInitials').textContent = name.slice(0,2).toUpperCase();
+    })();
+
+    function renderTable(rows) {
+        if (!rows.length) {
+            document.getElementById('historyTable').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            return;
+        }
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('historyTable').style.display = 'table';
+        const body = document.getElementById('historyBody');
+        body.innerHTML = rows.map(r => {
+            const isMal   = r.prediction === 'Malignant';
+            const confPct = (r.confidence * 100).toFixed(1);
+            return `
+            <tr>
+                <td class="row-id">#${r.id}</td>
+                <td class="row-filename" title="${r.filename}">${r.filename}</td>
+                <td>
+                    <span class="badge-pred ${isMal ? 'malignant' : 'benign'}">
+                        <i class="fas ${isMal ? 'fa-triangle-exclamation' : 'fa-check-circle'}" style="font-size:9px"></i>
+                        ${r.prediction}
+                    </span>
+                </td>
+                <td>
+                    <div class="conf-mini">
+                        <div class="conf-mini-bar">
+                            <div class="conf-mini-fill" style="width:${confPct}%"></div>
+                        </div>
+                        <span style="font-size:11px;color:var(--text-secondary)">${confPct}%</span>
+                    </div>
+                </td>
+                <td style="color:var(--text-muted);font-size:11px">${r.timestamp}</td>
+                <td>
+                    <button class="btn-detail" onclick="loadDetail(${r.id})">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function filterTable() {
+        const q      = document.getElementById('searchInput').value.toLowerCase();
+        const filter = document.getElementById('filterSelect').value;
+        const rows   = allRows.filter(r => {
+            const matchName = r.filename.toLowerCase().includes(q);
+            const matchPred = filter === 'all' || r.prediction === filter;
+            return matchName && matchPred;
+        });
+        renderTable(rows);
+    }
+
+    function loadDetail(pid) {
+        const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+        document.getElementById('detailBody').innerHTML =
+            '<div style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+        modal.show();
+
+        fetch(`/prediction/${pid}`)
+            .then(r => r.json())
+            .then(d => {
+                if (d.error) { document.getElementById('detailBody').innerHTML = `<p style="color:var(--danger)">${d.error}</p>`; return; }
+                const isMal   = d.prediction === 'Malignant';
+                const confPct = (d.confidence * 100).toFixed(1);
+                document.getElementById('detailBody').innerHTML = `
+                    <div class="detail-grid">
+                        <div class="detail-card">
+                            <div class="dc-label">Prediction</div>
+                            <div class="dc-val" style="color:${isMal ? 'var(--danger)' : 'var(--success)'}">${d.prediction}</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="dc-label">Confidence</div>
+                            <div class="dc-val">${confPct}%</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="dc-label">File</div>
+                            <div class="dc-val" style="font-size:12px;word-break:break-all">${d.filename}</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="dc-label">Analysed</div>
+                            <div class="dc-val" style="font-size:12px">${d.timestamp}</div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-section-title"><i class="fas fa-file-medical"></i> Pathology Report</div>
+                        <div>${d.report || 'No report available.'}</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-section-title"><i class="fas fa-stethoscope"></i> Recommendations</div>
+                        <div>${d.recommendations || 'No recommendations available.'}</div>
+                    </div>`;
+            })
+            .catch(() => {
+                document.getElementById('detailBody').innerHTML = '<p style="color:var(--danger)">Failed to load detail.</p>';
+            });
+    }
+
+    function confirmClear() {
+        new bootstrap.Modal(document.getElementById('confirmModal')).show();
+    }
+
+    function clearHistory() {
+        fetch('/clear-history', { method:'DELETE' })
+            .then(r => r.json())
+            .then(d => {
+                bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+                if (d.success) {
+                    allRows = [];
+                    renderTable([]);
+                    ['sumTotal','sumMal','sumBen','sumConf'].forEach(id => document.getElementById(id).textContent = '0');
+                }
+            })
+            .catch(() => alert('Failed to clear history.'));
+    }
+
+    window.addEventListener('load', () => {
+        fetch('/history-data')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('loadingState').style.display = 'none';
+                allRows = data;
+                renderTable(data);
+
+                /* Summary stats */
+                const total   = data.length;
+                const mal     = data.filter(r => r.prediction === 'Malignant').length;
+                const ben     = total - mal;
+                const avgConf = total ? (data.reduce((s,r) => s + r.confidence, 0) / total * 100).toFixed(1) + '%' : '—';
+                document.getElementById('sumTotal').textContent = total;
+                document.getElementById('sumMal').textContent   = mal;
+                document.getElementById('sumBen').textContent   = ben;
+                document.getElementById('sumConf').textContent  = avgConf;
+            })
+            .catch(() => {
+                document.getElementById('loadingState').innerHTML =
+                    '<p style="color:var(--danger)">Failed to load history.</p>';
+            });
+    });
+</script>
+</body>
+</html>

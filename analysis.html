@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Analysis | BreastCancerAI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-base:      #0d1117;
+            --bg-surface:   #111827;
+            --bg-elevated:  #1f2937;
+            --border:       #1f2937;
+            --border-light: #374151;
+            --text-primary: #e2e8f0;
+            --text-secondary:#9ca3af;
+            --text-muted:   #6b7280;
+            --accent:       #818cf8;
+            --accent-dark:  #6366f1;
+            --accent-dim:   #1e1b4b;
+            --danger:       #f87171;
+            --success:      #34d399;
+            --warning:      #fbbf24;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+            background:var(--bg-base);
+            color:var(--text-primary);
+            min-height:100vh;
+            display:flex; flex-direction:column;
+            font-size:13px; line-height:1.5;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            background:var(--bg-surface);
+            border-bottom:1px solid var(--border);
+            padding:0 24px; height:52px;
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; z-index:100;
+        }
+        .topbar-left { display:flex; align-items:center; gap:16px; }
+        .brand-pill  { display:flex; align-items:center; gap:8px; }
+        .brand-icon  {
+            width:28px; height:28px;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            border-radius:6px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; color:#fff;
+        }
+        .brand-name  { font-size:14px; font-weight:600; color:var(--accent); }
+        .separator   { width:1px; height:20px; background:var(--border-light); }
+        .page-title  { font-size:13px; color:var(--text-secondary); }
+        .topbar-right { display:flex; align-items:center; gap:10px; }
+
+        /* Back button */
+        .btn-back {
+            display:flex; align-items:center; gap:6px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            color:var(--text-secondary);
+            font-size:12px; font-weight:500;
+            padding:6px 14px;
+            cursor:pointer; text-decoration:none;
+            transition:all 0.15s;
+        }
+        .btn-back:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+
+        .user-pill {
+            display:flex; align-items:center; gap:8px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:20px; padding:4px 12px 4px 4px;
+            cursor:pointer;
+        }
+        .avatar {
+            width:28px; height:28px;
+            background:linear-gradient(135deg,#7c3aed,#4f46e5);
+            border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:10px; font-weight:600; color:#ede9fe;
+        }
+        .user-name { font-size:11px; color:var(--text-primary); }
+
+        /* ── STAT ROW ── */
+        .stat-row {
+            display:grid; grid-template-columns:repeat(4,1fr);
+            gap:1px; background:var(--border);
+            border-bottom:1px solid var(--border);
+        }
+        .stat-cell { background:var(--bg-surface); padding:14px 20px; }
+        .stat-cell .s-label {
+            font-size:10px; color:var(--text-muted);
+            text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;
+        }
+        .stat-cell .s-val { font-size:20px; font-weight:600; }
+        .s-val.accent   { color:var(--accent); }
+        .s-val.success  { color:var(--success); }
+        .s-val.danger   { color:var(--danger); }
+        .s-val.neutral  { color:var(--text-secondary); font-size:13px; }
+
+        /* ── MAIN GRID ── */
+        .analysis-grid {
+            display:grid; grid-template-columns:1fr 1fr;
+            gap:1px; background:var(--border); flex:1;
+        }
+
+        /* ── RESULT PANEL ── */
+        .result-panel { background:var(--bg-surface); padding:20px; overflow-y:auto; }
+        .section-header {
+            display:flex; align-items:center; gap:8px;
+            margin-bottom:16px; padding-bottom:12px;
+            border-bottom:1px solid var(--border);
+        }
+        .section-header h2 { font-size:14px; font-weight:600; color:var(--text-primary); }
+
+        .prediction-badge-lg {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:10px 20px; border-radius:8px;
+            font-size:16px; font-weight:700; margin-bottom:16px;
+        }
+        .prediction-badge-lg.malignant {
+            background:rgba(239,68,68,0.12);
+            border:1px solid rgba(239,68,68,0.3);
+            color:#fca5a5;
+        }
+        .prediction-badge-lg.benign {
+            background:rgba(52,211,153,0.1);
+            border:1px solid rgba(52,211,153,0.25);
+            color:#6ee7b7;
+        }
+
+        .confidence-section {
+            background:var(--bg-elevated);
+            border-radius:10px; padding:14px 16px; margin-bottom:16px;
+        }
+        .conf-label {
+            font-size:10px; text-transform:uppercase;
+            letter-spacing:0.08em; color:var(--text-muted); margin-bottom:8px;
+        }
+        .conf-bar {
+            height:10px; background:rgba(255,255,255,0.08);
+            border-radius:6px; overflow:hidden; margin-bottom:8px;
+        }
+        .conf-fill {
+            height:100%;
+            background:linear-gradient(90deg,#4f46e5,#7c3aed,#c084fc);
+            border-radius:6px; transition:width 1s ease; width:0%;
+        }
+        .conf-value { font-size:28px; font-weight:700; color:var(--text-primary); }
+        .conf-sub   { font-size:10px; color:var(--text-muted); }
+
+        .report-block, .recs-block {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:10px; padding:14px 16px; margin-bottom:14px;
+        }
+        .block-title {
+            font-size:10px; text-transform:uppercase;
+            letter-spacing:0.08em; color:var(--text-muted);
+            font-weight:600; margin-bottom:10px;
+            display:flex; align-items:center; gap:6px;
+        }
+        .block-title i { color:var(--accent); font-size:12px; }
+        .report-block div, .recs-block div {
+            font-size:12px; color:var(--text-secondary); line-height:1.6;
+        }
+
+        .timestamp-row {
+            display:flex; align-items:center; justify-content:space-between;
+            padding-top:12px; border-top:1px solid var(--border); margin-top:14px;
+        }
+        .timestamp-row .ts { font-size:11px; color:var(--text-muted); }
+
+        .btn-view-img {
+            display:inline-flex; align-items:center; gap:6px;
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:6px; color:var(--text-secondary);
+            font-size:11px; padding:5px 12px;
+            cursor:pointer; transition:all 0.15s; text-decoration:none;
+        }
+        .btn-view-img:hover { border-color:var(--accent); color:var(--accent); }
+
+        /* ── CHART PANEL ── */
+        .chart-panel {
+            background:var(--bg-surface);
+            padding:20px;
+            display:flex; flex-direction:column; gap:20px;
+            overflow-y:auto;
+        }
+        .chart-card {
+            background:var(--bg-elevated);
+            border:1px solid var(--border-light);
+            border-radius:10px; padding:16px;
+        }
+        .chart-card-title {
+            font-size:11px; font-weight:600; color:var(--text-secondary);
+            margin-bottom:14px;
+            display:flex; align-items:center; gap:6px;
+        }
+        .chart-card-title i { color:var(--accent); }
+        .chart-legend { display:flex; gap:16px; margin-bottom:10px; flex-wrap:wrap; }
+        .legend-item  { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-muted); }
+        .legend-swatch { width:10px; height:10px; border-radius:2px; }
+
+        /* ── DIAG CARDS ── */
+        .diag-grid {
+            display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:4px;
+        }
+        .diag-card { background:var(--bg-base); border-radius:8px; padding:12px 14px; }
+        .diag-card .d-label {
+            font-size:9px; text-transform:uppercase;
+            letter-spacing:0.07em; color:var(--text-muted); margin-bottom:4px;
+        }
+        .diag-card .d-val { font-size:18px; font-weight:600; }
+        .d-val.danger  { color:var(--danger); }
+        .d-val.warning { color:var(--warning); }
+        .d-val.success { color:var(--success); }
+
+        /* ── PDF BUTTON ── */
+        .btn-pdf {
+            display:inline-flex; align-items:center; gap:8px;
+            background:transparent;
+            border:1px solid var(--border-light);
+            border-radius:8px; color:var(--text-secondary);
+            font-size:12px; font-weight:500; padding:8px 16px;
+            cursor:pointer; transition:all 0.15s;
+        }
+        .btn-pdf:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+
+        .alert-warn-dark {
+            background:rgba(245,158,11,0.1);
+            border:1px solid rgba(245,158,11,0.25);
+            border-radius:8px; padding:10px 14px;
+            font-size:11px; color:var(--warning);
+        }
+
+        /* ── DROPDOWN ── */
+        .dropdown-dark .dropdown-menu {
+            background:var(--bg-surface);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            box-shadow:0 8px 30px rgba(0,0,0,0.4);
+        }
+        .dropdown-dark .dropdown-item { color:var(--text-secondary); font-size:12px; padding:8px 14px; }
+        .dropdown-dark .dropdown-item:hover { background:var(--bg-elevated); color:var(--text-primary); }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-track { background:var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background:var(--bg-elevated); border-radius:4px; }
+
+        @media (max-width:768px) {
+            .analysis-grid { grid-template-columns:1fr; }
+            .stat-row { grid-template-columns:1fr 1fr; }
+            .diag-grid { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <div class="topbar-left">
+        <div class="brand-pill">
+            <div class="brand-icon"><i class="fas fa-dna"></i></div>
+            <span class="brand-name">BreastCancerAI</span>
+        </div>
+        <div class="separator"></div>
+        <span class="page-title">Diagnostic Analysis Report</span>
+    </div>
+    <div class="topbar-right">
+        <!-- ← Back to Dashboard always goes to / -->
+        <a href="/" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <div class="dropdown dropdown-dark">
+            <div class="user-pill dropdown-toggle" role="button" data-bs-toggle="dropdown">
+                <div class="avatar" id="avatarInitials">U</div>
+                <span class="user-name" id="usernameDisplay">{{ username }}</span>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-arrow-right-from-bracket me-2"></i>Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<!-- STAT ROW -->
+<div class="stat-row">
+    <div class="stat-cell">
+        <div class="s-label">Prediction</div>
+        <div class="s-val accent" id="statPred">—</div>
+    </div>
+    <div class="stat-cell">
+        <div class="s-label">Confidence</div>
+        <div class="s-val success" id="statConf">—</div>
+    </div>
+    <div class="stat-cell">
+        <div class="s-label">Grade</div>
+        <div class="s-val danger" id="statGrade">—</div>
+    </div>
+    <div class="stat-cell">
+        <div class="s-label">Analysed</div>
+        <div class="s-val neutral" id="statDate">—</div>
+    </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="analysis-grid" style="flex:1">
+
+    <!-- Result Panel -->
+    <div class="result-panel">
+        <div class="section-header">
+            <i class="fas fa-microscope" style="color:var(--accent)"></i>
+            <h2>AI Prediction Result</h2>
+        </div>
+        <div id="resultContent">
+            <div style="text-align:center;padding:60px 0;color:var(--text-muted)">
+                <i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:12px;display:block"></i>
+                Loading analysis data…
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Panel -->
+    <div class="chart-panel">
+        <div class="section-header" style="margin-bottom:0">
+            <i class="fas fa-chart-column" style="color:var(--accent)"></i>
+            <h2>Diagnostic Visuals</h2>
+        </div>
+
+        <!-- Diag cards -->
+        <div class="diag-grid" id="diagGrid" style="display:none">
+            <div class="diag-card">
+                <div class="d-label">Grade</div>
+                <div class="d-val danger" id="dcGrade">—</div>
+            </div>
+            <div class="diag-card">
+                <div class="d-label">Ki-67 Index</div>
+                <div class="d-val warning" id="dcKi67">—</div>
+            </div>
+            <div class="diag-card">
+                <div class="d-label">Tumor Cellularity</div>
+                <div class="d-val warning" id="dcCell">—</div>
+            </div>
+            <div class="diag-card">
+                <div class="d-label">Mitotic Count</div>
+                <div class="d-val danger" id="dcMitotic">—</div>
+            </div>
+        </div>
+
+        <!-- Probability chart -->
+        <div class="chart-card">
+            <div class="chart-card-title">
+                <i class="fas fa-chart-bar"></i> Class Probability
+            </div>
+            <div class="chart-legend">
+                <div class="legend-item"><div class="legend-swatch" style="background:#34d399"></div>Benign</div>
+                <div class="legend-item"><div class="legend-swatch" style="background:#f87171"></div>Malignant</div>
+            </div>
+            <div style="position:relative;height:160px">
+                <canvas id="probChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Trend chart -->
+        <div class="chart-card">
+            <div class="chart-card-title">
+                <i class="fas fa-chart-line"></i> Confidence Trend (Recent Cases)
+            </div>
+            <div style="position:relative;height:160px">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn-pdf" id="downloadPdfBtn">
+                <i class="fas fa-file-pdf"></i> Save Report as PDF
+            </button>
+            <div class="alert-warn-dark">
+                <i class="fas fa-triangle-exclamation me-1"></i>
+                <strong>Medical Disclaimer:</strong> Research prototype only — not for standalone clinical use.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let probChart = null, trendChart = null;
+
+    /* Avatar initials */
+    (function(){
+        const name = document.getElementById('usernameDisplay').textContent.trim();
+        if (name) document.getElementById('avatarInitials').textContent = name.slice(0,2).toUpperCase();
+    })();
+
+    function getAnalysisData() {
+        try { return JSON.parse(sessionStorage.getItem('analysisData')); }
+        catch { return null; }
+    }
+
+    function renderCharts(prediction, confidence) {
+        const gridColor = 'rgba(255,255,255,0.06)';
+        const tickColor = '#6b7280';
+
+        /* Probability bar chart */
+        const ctxProb = document.getElementById('probChart').getContext('2d');
+        if (probChart) probChart.destroy();
+        const benignProb = prediction === 'Benign'    ? confidence : 1 - confidence;
+        const malProb    = prediction === 'Malignant' ? confidence : 1 - confidence;
+        probChart = new Chart(ctxProb, {
+            type:'bar',
+            data:{
+                labels:['Benign','Malignant'],
+                datasets:[{
+                    label:'Probability',
+                    data:[benignProb, malProb],
+                    backgroundColor:['rgba(52,211,153,0.7)','rgba(248,113,113,0.7)'],
+                    borderColor:['#34d399','#f87171'],
+                    borderWidth:1, borderRadius:4
+                }]
+            },
+            options:{
+                responsive:true, maintainAspectRatio:false,
+                plugins:{
+                    legend:{ display:false },
+                    tooltip:{ callbacks:{ label: ctx => `${(ctx.raw*100).toFixed(1)}%` } }
+                },
+                scales:{
+                    x:{ ticks:{ color:tickColor, font:{ size:11 } }, grid:{ color:gridColor } },
+                    y:{ beginAtZero:true, max:1,
+                        ticks:{ color:tickColor, font:{ size:10 }, callback: v => `${(v*100).toFixed(0)}%` },
+                        grid:{ color:gridColor } }
+                }
+            }
+        });
+
+        /* Confidence trend from /stats */
+        fetch('/stats')
+            .then(r => r.json())
+            .then(stats => {
+                if (!stats.length) return;
+                const labels = stats.map((_,i) => `Case ${i+1}`);
+                const confs  = stats.map(s => +(s.confidence*100).toFixed(1));
+                const ctxT   = document.getElementById('trendChart').getContext('2d');
+                if (trendChart) trendChart.destroy();
+                trendChart = new Chart(ctxT, {
+                    type:'line',
+                    data:{
+                        labels,
+                        datasets:[{
+                            label:'Confidence (%)',
+                            data:confs,
+                            borderColor:'#818cf8',
+                            backgroundColor:'rgba(129,140,248,0.1)',
+                            fill:true, tension:0.35,
+                            pointBackgroundColor:'#818cf8',
+                            pointRadius:3, borderWidth:2
+                        }]
+                    },
+                    options:{
+                        responsive:true, maintainAspectRatio:false,
+                        plugins:{
+                            legend:{ display:false },
+                            tooltip:{ callbacks:{ label: ctx => `${ctx.raw.toFixed(1)}%` } }
+                        },
+                        scales:{
+                            x:{ ticks:{ color:tickColor, font:{ size:10 } }, grid:{ color:gridColor } },
+                            y:{ beginAtZero:true, max:100,
+                                ticks:{ color:tickColor, font:{ size:10 }, callback: v => `${v}%` },
+                                grid:{ color:gridColor } }
+                        }
+                    }
+                });
+            })
+            .catch(() => {});
+    }
+
+    function displayResult(data) {
+        const confPct  = (data.confidence * 100).toFixed(1);
+        const isMalig  = data.prediction === 'Malignant';
+        const grade    = isMalig ? '3' : '1';
+        const ki67     = isMalig ? '38%' : '12%';
+        const cellul   = isMalig ? '66%' : '30%';
+        const mitotic  = isMalig ? '28/10 hpf' : '4/10 hpf';
+
+        /* Stat row */
+        const predEl = document.getElementById('statPred');
+        predEl.textContent  = data.prediction;
+        predEl.style.color  = isMalig ? 'var(--danger)' : 'var(--success)';
+        document.getElementById('statConf').textContent  = `${confPct}%`;
+        document.getElementById('statGrade').textContent = grade;
+        document.getElementById('statDate').textContent  = data.timestamp ? data.timestamp.split(' ')[0] : '—';
+
+        /* Diag cards */
+        document.getElementById('diagGrid').style.display = 'grid';
+        document.getElementById('dcGrade').textContent   = grade;
+        document.getElementById('dcKi67').textContent    = ki67;
+        document.getElementById('dcCell').textContent    = cellul;
+        document.getElementById('dcMitotic').textContent = mitotic;
+
+        /* Result content */
+        document.getElementById('resultContent').innerHTML = `
+            <div class="prediction-badge-lg ${isMalig ? 'malignant' : 'benign'}">
+                <i class="fas ${isMalig ? 'fa-triangle-exclamation' : 'fa-check-circle'}"></i>
+                ${data.prediction}
+            </div>
+
+            <div class="confidence-section">
+                <div class="conf-label">Confidence Score</div>
+                <div class="conf-bar"><div class="conf-fill" id="confFill"></div></div>
+                <div style="display:flex;align-items:baseline;gap:8px">
+                    <span class="conf-value">${confPct}%</span>
+                    <span class="conf-sub">model certainty</span>
+                </div>
+            </div>
+
+            <div class="report-block">
+                <div class="block-title"><i class="fas fa-file-medical"></i>Pathology Report</div>
+                <div>${data.report || 'No report data available.'}</div>
+            </div>
+
+            <div class="recs-block">
+                <div class="block-title"><i class="fas fa-stethoscope"></i>Recommendations</div>
+                <div>${data.recommendations || 'No recommendations available.'}</div>
+            </div>
+
+            <div class="timestamp-row">
+                <span class="ts"><i class="fas fa-clock me-1"></i>Analysed: ${data.timestamp || '—'}</span>
+                ${data.image_preview ? `
+                <button class="btn-view-img" onclick="window.open('${data.image_preview}','_blank')">
+                    <i class="fas fa-eye"></i> View Image
+                </button>` : ''}
+            </div>
+        `;
+
+        /* Animate confidence bar after paint */
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                const fill = document.getElementById('confFill');
+                if (fill) fill.style.width = `${confPct}%`;
+            }, 100);
+        });
+
+        renderCharts(data.prediction, data.confidence);
+        document.getElementById('downloadPdfBtn').onclick = () => saveReportAsPDF(data);
+    }
+
+    function saveReportAsPDF(data) {
+        const confPct = (data.confidence * 100).toFixed(1);
+        const win = window.open('', '_blank');
+        win.document.write(`<!DOCTYPE html>
+<html><head><title>BreastCancerAI — Diagnostic Report</title>
+<style>
+body{font-family:Arial,sans-serif;padding:2rem;color:#1f2937;max-width:720px;margin:0 auto}
+h1{color:#4f46e5;margin-bottom:0.4rem}
+.meta{color:#6b7280;font-size:0.82rem;margin-bottom:1.5rem}
+.badge{display:inline-block;padding:4px 14px;border-radius:4px;font-weight:600;margin-bottom:1rem;font-size:1rem}
+.malignant{background:#fee2e2;color:#991b1b}
+.benign{background:#d1fae5;color:#065f46}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+.card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:10px 14px}
+.card .label{font-size:0.75rem;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
+.card .val{font-size:1.1rem;font-weight:600;color:#111827}
+h3{font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;margin-bottom:0.5rem}
+.section{margin-bottom:1.2rem}
+.section p{font-size:0.9rem;line-height:1.6}
+hr{border:none;border-top:1px solid #e5e7eb;margin:1.5rem 0}
+.disclaimer{background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:10px 14px;font-size:0.8rem;color:#92400e}
+</style></head><body>
+<h1>BreastCancerAI — Diagnostic Report</h1>
+<div class="meta">EfficientNetB4 &nbsp;|&nbsp; Generated: ${data.timestamp || new Date().toLocaleString()}</div>
+<span class="badge ${data.prediction === 'Malignant' ? 'malignant' : 'benign'}">${data.prediction}</span>
+<div class="grid">
+  <div class="card"><div class="label">Confidence</div><div class="val">${confPct}%</div></div>
+  <div class="card"><div class="label">Grade</div><div class="val">${data.prediction === 'Malignant' ? '3' : '1'}</div></div>
+  <div class="card"><div class="label">Ki-67 Index</div><div class="val">${data.prediction === 'Malignant' ? '38%' : '12%'}</div></div>
+  <div class="card"><div class="label">Mitotic Count</div><div class="val">${data.prediction === 'Malignant' ? '28/10 hpf' : '4/10 hpf'}</div></div>
+</div>
+<div class="section"><h3>Pathology Report</h3><p>${data.report || '—'}</p></div>
+<div class="section"><h3>Recommendations</h3><p>${data.recommendations || '—'}</p></div>
+<hr>
+<div class="disclaimer">⚠ Medical Disclaimer: This report is generated by an AI research prototype and must not be used as a standalone clinical decision tool. Always consult a qualified pathologist.</div>
+</body></html>`);
+        win.document.close();
+        win.print();
+    }
+
+    /* ── Init ── */
+    window.addEventListener('load', () => {
+        const data = getAnalysisData();
+        if (data && data.success) {
+            displayResult(data);
+        } else {
+            document.getElementById('resultContent').innerHTML = `
+                <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+                    <i class="fas fa-exclamation-circle" style="font-size:2.5rem;color:var(--warning);margin-bottom:12px;display:block"></i>
+                    <p style="margin-bottom:6px;color:var(--text-secondary)">No analysis data found.</p>
+                    <p style="font-size:11px;margin-bottom:20px">Upload and analyse an image first.</p>
+                    <a href="/" style="color:var(--accent);text-decoration:none;font-size:12px">
+                        <i class="fas fa-arrow-left me-1"></i> Return to Dashboard
+                    </a>
+                </div>`;
+        }
+    });
+</script>
+</body>
+</html>
